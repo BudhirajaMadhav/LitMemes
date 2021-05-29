@@ -39,7 +39,6 @@ class MainActivity : AppCompatActivity() {
     
 
     private fun loadMeme(){
-        val queue = Volley.newRequestQueue(this)
         val url = "https://meme-api.herokuapp.com/gimme"
         progressBar.visibility = View.VISIBLE
         val jsonObjectRequest = JsonObjectRequest(
@@ -79,7 +78,8 @@ class MainActivity : AppCompatActivity() {
         ) { error ->
             Toast.makeText(this, "Image Loading Failed! Please try after sometime.", Toast.LENGTH_SHORT).show()
         }
-        queue.add(jsonObjectRequest)
+
+        MySingleton.getInstance(this).addToRequestQueue(jsonObjectRequest)
 
 
     }
