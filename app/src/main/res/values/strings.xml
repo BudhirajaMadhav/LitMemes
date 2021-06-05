@@ -4,4 +4,7 @@
     <string name="next">Next</string>
     <string name="meme_description">U noob, you don\'t have internet. Turn on data to see this meme</string>
     <string name="send_to">Share this meme using...</string>
+    <string name="r_subreddit">r/subreddit</string>
+    <string name="author">u/author</string>
+    <string name="title">title</string>
 </resources>

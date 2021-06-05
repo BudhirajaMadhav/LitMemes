@@ -6,66 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/memeImage"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/MemeRecyclerView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginBottom="100dp"
-        android:contentDescription="@string/meme_description"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
-        tools:srcCompat="@tools:sample/avatars" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@id/memeImage"
-        app:layout_constraintEnd_toEndOf="@id/memeImage"
-        app:layout_constraintStart_toStartOf="@id/memeImage"
-        app:layout_constraintTop_toTopOf="@id/memeImage"
-
-        />
-
-    <Button
-        android:id="@+id/shareButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:text="@string/share"
-        android:textAllCaps="false"
-        android:textSize="40sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/centreGuideline"
-        app:layout_constraintStart_toStartOf="parent"
-        android:onClick="shareMeme"
-        />
-
-    <Button
-        android:id="@+id/nextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:text="@string/next"
-        android:textAllCaps="false"
-        android:textSize="40sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/centreGuideline"
-        android:onClick="nextMeme"
-        />
-
-    <androidx.constraintlayout.widget.Guideline
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:id="@+id/centreGuideline"
-        android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.5" />
-
-
+     />
 </androidx.constraintlayout.widget.ConstraintLayout>

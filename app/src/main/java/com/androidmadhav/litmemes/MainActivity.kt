@@ -2,102 +2,149 @@ package com.androidmadhav.litmemes
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toBitmap
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
-import com.android.volley.toolbox.Volley
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.request.target.Target
+import com.bumptech.glide.load.resource.gif.GifDrawable
 import kotlinx.android.synthetic.main.activity_main.*
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.ByteBuffer
 
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), AddOns {
 
-    private var curImageUrl: String? = null
 
-    lateinit var imageBitMap: Bitmap
+    private var mAdapter = MemeListAdapter(this)
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        loadMeme()
+        MemeRecyclerView.layoutManager = LinearLayoutManager(this)
+
+        fetchdata()
+
+        MemeRecyclerView.adapter = mAdapter
+
+
     }
 
-    
+    override fun onStop() {
+        super.onStop()
+    }
 
-    private fun loadMeme(){
-        val url = "https://meme-api.herokuapp.com/gimme"
-        progressBar.visibility = View.VISIBLE
-        val jsonObjectRequest = JsonObjectRequest(
-            Request.Method.GET, url, null,
-            { response ->
-               response.getString("url").also { curImageUrl = it }
-                Glide.with(this).asBitmap().load(curImageUrl).listener(object :
-                    RequestListener<Bitmap> {
+    //Fires after the OnStop() state
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            trimCache(this)
+        } catch (e: Exception) {
+            // TODO Auto-generated catch block
+            e.printStackTrace()
+        }
+    }
 
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Bitmap>,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        progressBar.visibility = View.GONE
-                        return false
-                    }
-
-                    override fun onResourceReady(
-                        resource: Bitmap,
-                        model: Any?,
-                        target: Target<Bitmap>,
-                        dataSource: DataSource,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        imageBitMap = resource
-                        progressBar.visibility = View.GONE
-                        return false
-                    }
-
-                }).into(memeImage)
-
+    fun trimCache(context: Context) {
+        try {
+            val dir = context.cacheDir
+            if (dir != null && dir.isDirectory) {
+                deleteDir(dir)
             }
+        } catch (e: Exception) {
+            // TODO: handle exception
+        }
+    }
 
-
-        ) { error ->
-            Toast.makeText(this, "Image Loading Failed! Please try after sometime.", Toast.LENGTH_SHORT).show()
+    fun deleteDir(dir: File?): Boolean {
+        if (dir != null && dir.isDirectory) {
+            val children = dir.list()
+            for (i in children.indices) {
+                val success = deleteDir(File(dir, children[i]))
+                if (!success) {
+                    return false
+                }
+            }
         }
 
-        MySingleton.getInstance(this).addToRequestQueue(jsonObjectRequest)
+        // The directory is now empty so delete it
+        return dir!!.delete()
+    }
+
+    override fun fetchdata() {
+        val url = "https://meme-api.herokuapp.com/gimme/50"
+
+        val memeJsonResponses: ArrayList<MemeJsonResponse> = ArrayList()
+
+            val jsonObjectRequest = JsonObjectRequest(
+                Request.Method.GET,
+                url,
+                null,
+                {
+                    val memeJsonArray = it.getJSONArray("memes")
+                    for (idx in 0 until memeJsonArray.length()){
+                        val memeJSONObject = memeJsonArray.get(idx) as JSONObject
+                        val requiredMemeFormat = MemeJsonResponse(
+                            memeJSONObject.getString("postLink"),
+                            memeJSONObject.getString("subreddit"),
+                            memeJSONObject.getString("title"),
+                            memeJSONObject.getString("url"),
+                            memeJSONObject.getBoolean("nsfw"),
+                            memeJSONObject.getString("author"),
+                            memeJSONObject.getInt("ups")
+                        )
+                        memeJsonResponses.add(requiredMemeFormat)
+  }
+                    mAdapter.updateMemes(memeJsonResponses)
+                },
+                {
+//                    TODO
+                }
+            )
+            MySingleton.getInstance(this).addToRequestQueue(jsonObjectRequest)
+
+    }
+
+    override fun onItemClicked(item: MemeJsonResponse) {
+
+        val builder = CustomTabsIntent.Builder()
+        val colorInt: Int = Color.parseColor("#FF0000") //red
+        builder.setToolbarColor(colorInt)
+        val customTabsIntent = builder.build()
+        customTabsIntent.launchUrl(this, Uri.parse(item.postLink))
 
 
     }
 
+
+//
     //download the image in cache
-    private fun downloadImageThenShare(bitmap: Bitmap) {
+    private fun downloadImageThenShare(imageDrawable: Drawable) {
         val fileName = "LitMemes${System.currentTimeMillis()}.png"
         val filePath = "${this.cacheDir}/$fileName"
-        downloadImageIntoCache(bitmap, filePath) {
+        downloadImageIntoCache(imageDrawable, filePath) {
             shareImage(this, File(filePath))
         }
     }
 
     //download .png file
-    private fun downloadImageIntoCache(bitmap: Bitmap, path: String, finishDownload: () -> Unit) {
+    private fun downloadImageIntoCache(imageDrawable: Drawable, path: String, finishDownload: () -> Unit) {
         val file = File(path)
         FileOutputStream(file).use { output ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            imageDrawable.toBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
             finishDownload.invoke()
         }
     }
@@ -108,35 +155,49 @@ class MainActivity : AppCompatActivity() {
         sharingIntent.type = "image/*"
         val uri = FileProvider.getUriForFile(context, "$packageName.provider", file)
         sharingIntent.putExtra(Intent.EXTRA_STREAM, uri)
-        sharingIntent.putExtra(Intent.EXTRA_TEXT, curImageUrl)
+//        sharingIntent.putExtra(Intent.EXTRA_TEXT, curImageUrl)
         val intentChooser = Intent.createChooser(sharingIntent, "Share via")
 
-        val resInfoList =
-            packageManager.queryIntentActivities(intentChooser, PackageManager.MATCH_DEFAULT_ONLY)
-
-        for (resolveInfo in resInfoList) {
-            val packageName = resolveInfo.activityInfo.packageName
-            grantUriPermission(
-                packageName, uri,
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-        }
+//        val resInfoList =
+//            packageManager.queryIntentActivities(intentChooser, PackageManager.MATCH_DEFAULT_ONLY)
+//
+//        for (resolveInfo in resInfoList) {
+//            val packageName = resolveInfo.activityInfo.packageName
+//            grantUriPermission(
+//                packageName, uri,
+//                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+//                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+//            )
+//        }
 
         context.startActivity(intentChooser)
     }
 
-    fun nextMeme(view: View) {
-        loadMeme()
+
+
+
+    override fun shareImg(image: Drawable) {
+
+        downloadImageThenShare(image)
     }
 
+    override fun shareGif(image: Drawable) {
 
-    fun shareMeme(view: View) {
+        val byteBuffer = (image as GifDrawable).buffer
+        val fileName = "LitMemes${System.currentTimeMillis()}.gif"
+        val filePath = "${this.cacheDir}/$fileName"
+        val gifFile = File(filePath)
 
-        downloadImageThenShare(imageBitMap)
+        val output = FileOutputStream(gifFile)
+        val bytes = ByteArray(byteBuffer.capacity())
+        (byteBuffer.duplicate().clear() as ByteBuffer).get(bytes)
+        output.write(bytes, 0 ,bytes.size)
+        shareImage(this, File(filePath))
+
+        output.close()
+
     }
 
 
 }
-
 
