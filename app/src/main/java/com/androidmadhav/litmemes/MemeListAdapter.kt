@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -42,7 +43,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
             callFetchData = true
         }
 
-        lateinit var imageDrawable: Drawable
+        var imageDrawable: Drawable? = null
         val currentItem = items[position]
 
         holder.subreddit.text = "r/" + currentItem.subreddit
@@ -84,12 +85,16 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         holder.share.setImageResource(R.drawable.share)
 
         holder.share.setOnClickListener{
-            if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
+            if(imageDrawable == null){
 
-                listener.shareGif(imageDrawable)
+                listener.notYetLoaded()
+            }
+            else if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
+
+                listener.shareGif(imageDrawable!!)
 
             }else {
-                listener.shareImg(imageDrawable)
+                listener.shareImg(imageDrawable!!)
             }
 
         }
@@ -127,4 +132,5 @@ interface AddOns{
     fun memeImageClicked(item: MemeJsonResponse)
     fun shareImg(image: Drawable)
     fun shareGif(image: Drawable)
+    fun notYetLoaded()
 }

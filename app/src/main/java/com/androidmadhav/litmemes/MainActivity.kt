@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity(), AddOns {
 
 
 //    Clear glide cache
-    fun clearGlideCache() = Glide.get(this).clearDiskCache()
+private fun clearGlideCache() = Glide.get(this).clearDiskCache()
 
 
     override fun onStop() {
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity(), AddOns {
         }
     }
 
-    fun trimCache(context: Context) {
+    private fun trimCache(context: Context) {
         try {
             val dir = context.cacheDir
             if (dir != null && dir.isDirectory) {
@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity(), AddOns {
         }
     }
 
-    fun deleteDir(dir: File?): Boolean {
+    private fun deleteDir(dir: File?): Boolean {
         if (dir != null && dir.isDirectory) {
             val children = dir.list()
             for (i in children.indices) {
@@ -173,246 +173,7 @@ class MainActivity : AppCompatActivity(), AddOns {
 //        sharingIntent.putExtra(Intent.EXTRA_TEXT, curImageUrl)
         val intentChooser = Intent.createChooser(sharingIntent, "Share via")
 
-//        val resInfoList =
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//            packageManager.queryIntentActivities(intentChooser, PackageManager.MATCH_DEFAULT_ONLY)
+//        val resInfoList = packageManager.queryIntentActivities(intentChooser, PackageManager.MATCH_DEFAULT_ONLY)
 //
 //        for (resolveInfo in resInfoList) {
 //            val packageName = resolveInfo.activityInfo.packageName
@@ -450,6 +211,10 @@ class MainActivity : AppCompatActivity(), AddOns {
 
         output.close()
 
+    }
+
+    override fun notYetLoaded() {
+        Toast.makeText(this, "Please wait for the meme to load!", Toast.LENGTH_SHORT).show()
     }
 
 
