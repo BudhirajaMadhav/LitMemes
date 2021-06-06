@@ -111,6 +111,8 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         notifyDataSetChanged()
 
     }
+
+
 }
 
 class MemeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
