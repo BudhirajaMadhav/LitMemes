@@ -1,7 +1,6 @@
 package com.androidmadhav.litmemes
 
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,10 +12,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
-import com.bumptech.glide.load.resource.gif.GifDrawable
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import java.io.File
 
 class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeViewHolder>() {
     private var callFetchData: Boolean = false
@@ -28,7 +25,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         val viewHolder = MemeViewHolder(smallViewsXml)
         viewHolder.memeImage.setOnClickListener{
 
-            listener.onItemClicked(items[viewHolder.adapterPosition])
+            listener.memeImageClicked(items[viewHolder.adapterPosition])
         }
 
         return viewHolder
@@ -46,7 +43,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
             callFetchData = true
         }
 
-        lateinit var imageDrawable: Drawable
+        var imageDrawable: Drawable? = null
         val currentItem = items[position]
 
         holder.subreddit.text = "r/" + currentItem.subreddit
@@ -88,12 +85,16 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         holder.share.setImageResource(R.drawable.share)
 
         holder.share.setOnClickListener{
-            if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
+            if(imageDrawable == null){
 
-                listener.shareGif(imageDrawable)
+                listener.notYetLoaded()
+            }
+            else if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
+
+                listener.shareGif(imageDrawable!!)
 
             }else {
-                listener.shareImg(imageDrawable)
+                listener.shareImg(imageDrawable!!)
             }
 
         }
@@ -110,6 +111,8 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         notifyDataSetChanged()
 
     }
+
+
 }
 
 class MemeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -128,7 +131,8 @@ class MemeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 interface AddOns{
 
     fun fetchdata()
-    fun onItemClicked(item: MemeJsonResponse)
+    fun memeImageClicked(item: MemeJsonResponse)
     fun shareImg(image: Drawable)
     fun shareGif(image: Drawable)
+    fun notYetLoaded()
 }
