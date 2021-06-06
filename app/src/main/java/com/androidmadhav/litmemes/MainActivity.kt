@@ -15,6 +15,7 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
+import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.gif.GifDrawable
 import kotlinx.android.synthetic.main.activity_main.*
 import org.json.JSONObject
@@ -25,32 +26,42 @@ import java.nio.ByteBuffer
 
 class MainActivity : AppCompatActivity(), AddOns {
 
-
     private var mAdapter = MemeListAdapter(this)
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+//        Set layout manager
         MemeRecyclerView.layoutManager = LinearLayoutManager(this)
 
+//        Fetch 1st set of data
         fetchdata()
 
+//        Set the adapter
         MemeRecyclerView.adapter = mAdapter
 
-
     }
+
+
+//    Clear glide cache
+    fun clearGlideCache() = Glide.get(this).clearDiskCache()
+
 
     override fun onStop() {
         super.onStop()
     }
+
 
     //Fires after the OnStop() state
     override fun onDestroy() {
         super.onDestroy()
         try {
             trimCache(this)
+
+//            Cleared the glide cache when back button is pressed
+            clearGlideCache()
+
         } catch (e: Exception) {
             // TODO Auto-generated catch block
             e.printStackTrace()
@@ -83,6 +94,8 @@ class MainActivity : AppCompatActivity(), AddOns {
         return dir!!.delete()
     }
 
+
+//    Fetching response from API and updating into adapter
     override fun fetchdata() {
         val url = "https://meme-api.herokuapp.com/gimme/50"
 
@@ -117,7 +130,9 @@ class MainActivity : AppCompatActivity(), AddOns {
 
     }
 
-    override fun onItemClicked(item: MemeJsonResponse) {
+
+//  Open post in chrome custom tab, when image is clicked
+    override fun memeImageClicked(item: MemeJsonResponse) {
 
         val builder = CustomTabsIntent.Builder()
         val colorInt: Int = Color.parseColor("#FF0000") //red
@@ -129,7 +144,6 @@ class MainActivity : AppCompatActivity(), AddOns {
     }
 
 
-//
     //download the image in cache
     private fun downloadImageThenShare(imageDrawable: Drawable) {
         val fileName = "LitMemes${System.currentTimeMillis()}.png"
@@ -138,6 +152,7 @@ class MainActivity : AppCompatActivity(), AddOns {
             shareImage(this, File(filePath))
         }
     }
+
 
     //download .png file
     private fun downloadImageIntoCache(imageDrawable: Drawable, path: String, finishDownload: () -> Unit) {
@@ -159,6 +174,244 @@ class MainActivity : AppCompatActivity(), AddOns {
         val intentChooser = Intent.createChooser(sharingIntent, "Share via")
 
 //        val resInfoList =
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //            packageManager.queryIntentActivities(intentChooser, PackageManager.MATCH_DEFAULT_ONLY)
 //
 //        for (resolveInfo in resInfoList) {
@@ -174,24 +427,25 @@ class MainActivity : AppCompatActivity(), AddOns {
     }
 
 
-
-
+//    Share jpg/png image
     override fun shareImg(image: Drawable) {
 
         downloadImageThenShare(image)
     }
 
+//    Share GIF
     override fun shareGif(image: Drawable) {
 
         val byteBuffer = (image as GifDrawable).buffer
         val fileName = "LitMemes${System.currentTimeMillis()}.gif"
         val filePath = "${this.cacheDir}/$fileName"
         val gifFile = File(filePath)
-
         val output = FileOutputStream(gifFile)
         val bytes = ByteArray(byteBuffer.capacity())
+
         (byteBuffer.duplicate().clear() as ByteBuffer).get(bytes)
         output.write(bytes, 0 ,bytes.size)
+
         shareImage(this, File(filePath))
 
         output.close()
