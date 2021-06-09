@@ -1,6 +1,7 @@
 # LitMemes
 LitMemes is an ultimate distraction free stress-releasing memes app which offers an **unlimited scroll** of memes. Its an app made for meme lovers around the world.
 It offers the reddit level of dankness as ofcource the memes are fetched from reddit xd;
+<br>
 Very soon I'll add a subreddit mode through which the user can enjoy memes from their favourite subreddit.
 
 ## Student Friendly
