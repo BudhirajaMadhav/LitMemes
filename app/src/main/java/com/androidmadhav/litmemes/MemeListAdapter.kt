@@ -80,9 +80,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
 
         }).into(holder.memeImage)
 
-        holder.heart.setImageResource(R.drawable.like)
         holder.upvotes.text = currentItem.ups.toString()
-        holder.share.setImageResource(R.drawable.share)
 
         holder.share.setOnClickListener{
             if(imageDrawable == null){
