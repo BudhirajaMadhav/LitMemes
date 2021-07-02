@@ -8,23 +8,27 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.gif.GifDrawable
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 
 
-class MainActivity : AppCompatActivity(), AddOns {
+open class MainActivity : AppCompatActivity(), IMemeListAdapter {
 
     private var mAdapter = MemeListAdapter(this)
 
@@ -41,6 +45,11 @@ class MainActivity : AppCompatActivity(), AddOns {
 //        Set the adapter
         MemeRecyclerView.adapter = mAdapter
 
+        floatingActionButton.setOnClickListener({
+            val intent = Intent(this, SavedMemesActivity::class.java)
+            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+        })
     }
 
 
@@ -56,43 +65,43 @@ private fun clearGlideCache() = Glide.get(this).clearDiskCache()
     //Fires after the OnStop() state
     override fun onDestroy() {
         super.onDestroy()
-        try {
-            trimCache(this)
+//        try {
+//            trimCache(this)
 
 //            Cleared the glide cache when back button is pressed
             clearGlideCache()
 
-        } catch (e: Exception) {
-            // TODO Auto-generated catch block
-            e.printStackTrace()
-        }
+//        } catch (e: Exception) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace()
+//        }
     }
 
-    private fun trimCache(context: Context) {
-        try {
-            val dir = context.cacheDir
-            if (dir != null && dir.isDirectory) {
-                deleteDir(dir)
-            }
-        } catch (e: Exception) {
-            // TODO: handle exception
-        }
-    }
-
-    private fun deleteDir(dir: File?): Boolean {
-        if (dir != null && dir.isDirectory) {
-            val children = dir.list()
-            for (i in children.indices) {
-                val success = deleteDir(File(dir, children[i]))
-                if (!success) {
-                    return false
-                }
-            }
-        }
-
-        // The directory is now empty so delete it
-        return dir!!.delete()
-    }
+//    private fun trimCache(context: Context) {
+//        try {
+//            val dir = context.cacheDir
+//            if (dir != null && dir.isDirectory) {
+//                deleteDir(dir)
+//            }
+//        } catch (e: Exception) {
+//            // TODO: handle exception
+//        }
+//    }
+//
+//    private fun deleteDir(dir: File?): Boolean {
+//        if (dir != null && dir.isDirectory) {
+//            val children = dir.list()
+//            for (i in children.indices) {
+//                val success = deleteDir(File(dir, children[i]))
+//                if (!success) {
+//                    return false
+//                }
+//            }
+//        }
+//
+////         The directory is now empty so delete it
+//        return dir!!.delete()
+//    }
 
 
 //    Fetching response from API and updating into adapter
@@ -144,28 +153,13 @@ private fun clearGlideCache() = Glide.get(this).clearDiskCache()
     }
 
 
-    //download the image in cache
-    private fun downloadImageThenShare(imageDrawable: Drawable) {
-        val fileName = "LitMemes${System.currentTimeMillis()}.png"
-        val filePath = "${this.cacheDir}/$fileName"
-        downloadImageIntoCache(imageDrawable, filePath) {
-            shareImage(this, File(filePath))
-        }
-    }
-
-
-    //download .png file
-    private fun downloadImageIntoCache(imageDrawable: Drawable, path: String, finishDownload: () -> Unit) {
-        val file = File(path)
-        FileOutputStream(file).use { output ->
-//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
-            imageDrawable.toBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
-            finishDownload.invoke()
-        }
-    }
 
     //provides sharing functionality of an image file type
-    private fun shareImage(context: Context, file: File) {
+    override fun shareImage(image: Drawable, isGif: Boolean) {
+
+        val filePath: String = savetoDir(image, isGif)
+        val context = this
+        val file = File(filePath)
         val sharingIntent = Intent(Intent.ACTION_SEND)
         sharingIntent.type = "image/*"
         val uri = FileProvider.getUriForFile(context, "$packageName.provider", file)
@@ -188,33 +182,56 @@ private fun clearGlideCache() = Glide.get(this).clearDiskCache()
     }
 
 
-//    Share jpg/png image
-    override fun shareImg(image: Drawable) {
-
-        downloadImageThenShare(image)
-    }
-
-//    Share GIF
-    override fun shareGif(image: Drawable) {
-
-        val byteBuffer = (image as GifDrawable).buffer
-        val fileName = "LitMemes${System.currentTimeMillis()}.gif"
-        val filePath = "${this.cacheDir}/$fileName"
-        val gifFile = File(filePath)
-        val output = FileOutputStream(gifFile)
-        val bytes = ByteArray(byteBuffer.capacity())
-
-        (byteBuffer.duplicate().clear() as ByteBuffer).get(bytes)
-        output.write(bytes, 0 ,bytes.size)
-
-        shareImage(this, File(filePath))
-
-        output.close()
-
-    }
-
     override fun notYetLoaded() {
         Toast.makeText(this, "Please wait for the meme to load!", Toast.LENGTH_SHORT).show()
+    }
+
+
+    private val viewModel: MemeViewModel by viewModels {
+
+        MemeViewModelFactory((application as MemeApplication).repository)
+
+    }
+
+
+    override fun saveMeme(savedMeme: SavedMeme) {
+        viewModel.insert(savedMeme)
+    }
+
+
+//    Downloads image to DIR and returns the file path
+
+    override fun savetoDir (image: Drawable, isGif: Boolean): String {
+
+        if(isGif){
+            val byteBuffer = (image as GifDrawable).buffer
+            val fileName = "LitMemes${System.currentTimeMillis()}.gif"
+            val filePath = "${this.cacheDir}/$fileName"
+            val gifFile = File(filePath)
+            val output = FileOutputStream(gifFile)
+            val bytes = ByteArray(byteBuffer.capacity())
+
+            (byteBuffer.duplicate().clear() as ByteBuffer).get(bytes)
+            output.write(bytes, 0 ,bytes.size)
+            output.close()
+
+            return filePath
+        }
+
+        val fileName = "LitMemes${System.currentTimeMillis()}.png"
+        val filePath = "${this.cacheDir}/$fileName"
+
+        val file = File(filePath)
+        FileOutputStream(file).use { output ->
+            image.toBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
+        }
+
+        return filePath
+
+    }
+
+    override fun deleteMeme(url: String) {
+        viewModel.delete(url)
     }
 
 

@@ -1,5 +1,6 @@
 package com.androidmadhav.litmemes
 
+import android.content.Context
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
@@ -8,14 +9,16 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Query
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 
-class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeViewHolder>() {
+class MemeListAdapter(private val listener: IMemeListAdapter): RecyclerView.Adapter<MemeViewHolder>() {
     private var callFetchData: Boolean = false
     private val items: ArrayList<MemeJsonResponse> = ArrayList()
 
@@ -33,6 +36,8 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
 
     override fun onBindViewHolder(holder: MemeViewHolder, position: Int) {
 
+        holder.saveButton.setImageResource(R.drawable.save_white_outline)
+
         if(position % 44 == 0 && callFetchData){
 
             listener.fetchdata()
@@ -46,6 +51,16 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         var imageDrawable: Drawable? = null
         val currentItem = items[position]
 
+        var isGif: Boolean = false
+
+        if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
+            isGif = true
+        }
+
+
+        var cachePath:  String? = null
+        var savedMeme: SavedMeme? = null
+
         holder.subreddit.text = "r/" + currentItem.subreddit
         holder.author.text = "Posted by u/${currentItem.author}"
         holder.title.text = currentItem.title
@@ -58,6 +73,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
                 target: Target<Drawable>?,
                 isFirstResource: Boolean
             ): Boolean {
+                holder.progressBar.visibility = View.GONE
                 return false
             }
 
@@ -74,6 +90,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
                     imageDrawable = resource
 
                 }
+
                 holder.progressBar.visibility = View.GONE
                 return false
             }
@@ -82,21 +99,58 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
 
         holder.upvotes.text = currentItem.ups.toString()
 
+
         holder.share.setOnClickListener{
             if(imageDrawable == null){
 
                 listener.notYetLoaded()
             }
-            else if(currentItem.url.subSequence(currentItem.url.length - 3, currentItem.url.length) == "gif"){
-
-                listener.shareGif(imageDrawable!!)
-
-            }else {
-                listener.shareImg(imageDrawable!!)
+            else {
+                listener.shareImage(imageDrawable!!, isGif)
             }
 
         }
 
+
+
+        var isSaved = false
+        var isDownloaded = false
+
+        holder.saveButton.setOnClickListener(){
+
+            if(!isDownloaded && imageDrawable != null) {
+                // This savedMeme is not saved in DB, so its ID is 0
+                cachePath = listener.savetoDir(imageDrawable!!, isGif)
+                savedMeme = SavedMeme(items[position], cachePath!!)
+                isDownloaded = true
+            }
+
+
+            if(imageDrawable == null){
+
+                listener.notYetLoaded()
+
+            }
+
+            else if(savedMeme != null) {
+
+                if(!isSaved) {
+                    holder.saveButton.setImageResource(R.drawable.saved_white)
+                    listener.saveMeme(savedMeme!!)
+                }
+
+                else {
+
+                    holder.saveButton.setImageResource(R.drawable.save_white_outline)
+
+//                    This deleteMeme won't do anything, cuz the current savedMeme does not have ID
+                    listener.deleteMeme(savedMeme!!.jsonResponse.url)
+                }
+            }
+
+            isSaved = !isSaved
+
+        }
 
     }
 
@@ -108,6 +162,7 @@ class MemeListAdapter(private val listener: AddOns): RecyclerView.Adapter<MemeVi
         items.addAll(memeJsonResponses)
         notifyDataSetChanged()
 
+//        DiffUtil::class.java
     }
 
 
@@ -123,14 +178,19 @@ class MemeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     val upvotes: TextView = itemView.findViewById(R.id.upvotes)
     val share: ImageView = itemView.findViewById(R.id.share)
     val heart: ImageView = itemView.findViewById(R.id.heart)
+    val saveButton: ImageView = itemView.findViewById(R.id.save_button)
 
 }
 
-interface AddOns{
+interface IMemeListAdapter{
 
     fun fetchdata()
     fun memeImageClicked(item: MemeJsonResponse)
-    fun shareImg(image: Drawable)
-    fun shareGif(image: Drawable)
+    fun shareImage(image: Drawable, isGif: Boolean)
     fun notYetLoaded()
+    fun saveMeme(savedMeme: SavedMeme)
+    fun savetoDir(image: Drawable, isGif: Boolean): String
+    fun deleteMeme(url: String)
 }
+
+
