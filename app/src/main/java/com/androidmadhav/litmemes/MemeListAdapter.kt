@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Query
 import com.bumptech.glide.Glide
@@ -37,6 +38,7 @@ class MemeListAdapter(private val listener: IMemeListAdapter): RecyclerView.Adap
     override fun onBindViewHolder(holder: MemeViewHolder, position: Int) {
 
         holder.saveButton.setImageResource(R.drawable.save_white_outline)
+
 
         if(position % 44 == 0 && callFetchData){
 
@@ -159,8 +161,9 @@ class MemeListAdapter(private val listener: IMemeListAdapter): RecyclerView.Adap
     }
 
     fun updateMemes(memeJsonResponses: ArrayList<MemeJsonResponse>) {
+        val prevSize = items.size
         items.addAll(memeJsonResponses)
-        notifyDataSetChanged()
+        notifyItemRangeInserted(prevSize, 50)
 
 //        DiffUtil::class.java
     }

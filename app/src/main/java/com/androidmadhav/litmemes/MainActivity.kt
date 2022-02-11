@@ -16,6 +16,7 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
 import com.bumptech.glide.Glide
@@ -31,13 +32,15 @@ import java.nio.ByteBuffer
 open class MainActivity : AppCompatActivity(), IMemeListAdapter {
 
     private var mAdapter = MemeListAdapter(this)
+    private lateinit var mLayoutManager: LinearLayoutManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
 //        Set layout manager
-        MemeRecyclerView.layoutManager = LinearLayoutManager(this)
+        mLayoutManager = LinearLayoutManager(this)
+        MemeRecyclerView.layoutManager = mLayoutManager
 
 //        Fetch 1st set of data
         fetchdata()
@@ -45,21 +48,31 @@ open class MainActivity : AppCompatActivity(), IMemeListAdapter {
 //        Set the adapter
         MemeRecyclerView.adapter = mAdapter
 
-        floatingActionButton.setOnClickListener({
+//        addScrollListener()
+
+        floatingActionButton.setOnClickListener {
             val intent = Intent(this, SavedMemesActivity::class.java)
-            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            intent.flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
             startActivity(intent)
+        }
+    }
+
+    private fun addScrollListener() {
+        MemeRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener()
+        {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                if(!MemeRecyclerView.canScrollVertically(1)) {
+                    fetchdata()
+                }
+
+            }
         })
     }
 
-
-//    Clear glide cache
+    //    Clear glide cache
 private fun clearGlideCache() = Glide.get(this).clearDiskCache()
-
-
-    override fun onStop() {
-        super.onStop()
-    }
 
 
     //Fires after the OnStop() state
@@ -68,7 +81,7 @@ private fun clearGlideCache() = Glide.get(this).clearDiskCache()
 //        try {
 //            trimCache(this)
 
-//            Cleared the glide cache when back button is pressed
+//            Cleared th--e glide cache when back button is pressed
             clearGlideCache()
 
 //        } catch (e: Exception) {
