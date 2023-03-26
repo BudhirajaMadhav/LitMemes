@@ -19,9 +19,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonObjectRequest
+import com.androidmadhav.litmemes.databinding.ActivityMainBinding
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.gif.GifDrawable
-import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
@@ -33,10 +33,16 @@ open class MainActivity : AppCompatActivity(), IMemeListAdapter {
 
     private var mAdapter = MemeListAdapter(this)
     private lateinit var mLayoutManager: LinearLayoutManager
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+
+        val MemeRecyclerView = binding.MemeRecyclerView
+        val floatingActionButton = binding.floatingActionButton
 
 //        Set layout manager
         mLayoutManager = LinearLayoutManager(this)
@@ -58,12 +64,12 @@ open class MainActivity : AppCompatActivity(), IMemeListAdapter {
     }
 
     private fun addScrollListener() {
-        MemeRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener()
+        binding.MemeRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener()
         {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
 
-                if(!MemeRecyclerView.canScrollVertically(1)) {
+                if(!binding.MemeRecyclerView.canScrollVertically(1)) {
                     fetchdata()
                 }
 
@@ -119,7 +125,7 @@ private fun clearGlideCache() = Glide.get(this).clearDiskCache()
 
 //    Fetching response from API and updating into adapter
     override fun fetchdata() {
-        val url = "https://meme-api.herokuapp.com/gimme/50"
+        val url = "https://meme-api.com/gimme/50"
 
         val memeJsonResponses: ArrayList<MemeJsonResponse> = ArrayList()
 
